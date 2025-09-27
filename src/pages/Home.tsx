@@ -45,10 +45,10 @@ const Home: React.FC = () => {
             <span className="text-xl sm:text-2xl">📍</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            New Check-In
+            New Audit
           </h1>
           <p className="text-gray-600 text-sm sm:text-base">
-            Record your visit to a location
+            Record your visit to a store
           </p>
         </div>
 
@@ -80,7 +80,7 @@ const Home: React.FC = () => {
                 className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                 required
               >
-                <option value="">Select a location</option>
+                <option value="">Select a store</option>
                 {locations.map((location) => (
                   <option key={location.id} value={location.id}>
                     {location.name}

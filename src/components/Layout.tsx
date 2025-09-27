@@ -25,7 +25,7 @@ const Layout: React.FC = () => {
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
               >
                 <span>🏠</span>
-                <span>Check-In</span>
+                <span>Audits</span>
               </Link>
               <Link
                 to="/plan"
@@ -39,14 +39,14 @@ const Layout: React.FC = () => {
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
               >
                 <span>⚙️</span>
-                <span>Locations</span>
+                <span>Stores</span>
               </Link>
               <Link
                 to="/overview"
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
               >
                 <span>📅</span>
-                <span>Overview</span>
+                <span>Calendar</span>
               </Link>
             </nav>
 
@@ -90,7 +90,7 @@ const Layout: React.FC = () => {
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2"
                 >
                   <span>🏠</span>
-                  <span>Check-In</span>
+                  <span>Audits</span>
                 </Link>
                 <Link
                   to="/plan"
@@ -106,7 +106,7 @@ const Layout: React.FC = () => {
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2"
                 >
                   <span>⚙️</span>
-                  <span>Locations</span>
+                  <span>Stores</span>
                 </Link>
                 <Link
                   to="/overview"
@@ -114,7 +114,7 @@ const Layout: React.FC = () => {
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2"
                 >
                   <span>📅</span>
-                  <span>Overview</span>
+                  <span>Calendar</span>
                 </Link>
               </nav>
             </div>

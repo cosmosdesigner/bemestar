@@ -28,8 +28,12 @@ const Overview: React.FC = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [checkInToDelete, setCheckInToDelete] = useState<CheckIn | null>(null);
+  const [addingCheckIn, setAddingCheckIn] = useState(false);
+  const [newCheckInDate, setNewCheckInDate] = useState("");
+  const [newCheckInLocationId, setNewCheckInLocationId] = useState("");
+  const [newCheckInObservations, setNewCheckInObservations] = useState("");
 
-  // Group check-ins and planned check-ins by date
+  // Group audits and planned audits by date
   const checkInsByDate: Record<string, CheckIn[]> = {};
   const plannedCheckInsByDate: Record<string, PlannedCheckIn[]> = {};
 
@@ -59,7 +63,7 @@ const Overview: React.FC = () => {
     return location ? location.color || "#3B82F6" : "#3B82F6";
   };
 
-  // Get the color for a day (use the most recent check-in's location color, or planned check-in if no actual check-ins)
+  // Get the color for a day (use the most recent check-in's location color, or planned check-in if no actual audits)
   const getDayColor = (dateStr: string) => {
     const dayCheckIns = checkInsByDate[dateStr];
     const dayPlannedCheckIns = plannedCheckInsByDate[dateStr];
@@ -71,7 +75,7 @@ const Overview: React.FC = () => {
       );
       return getLocationColor(sortedCheckIns[0].locationId);
     } else if (dayPlannedCheckIns && dayPlannedCheckIns.length > 0) {
-      // Show planned check-ins with a lighter/different style
+      // Show planned audits with a lighter/different style
       return getLocationColor(dayPlannedCheckIns[0].locationId) + "80"; // Add transparency
     }
 
@@ -105,10 +109,7 @@ const Overview: React.FC = () => {
   }
 
   const handleDayClick = (dateStr: string | null) => {
-    if (
-      dateStr &&
-      (checkInsByDate[dateStr] || plannedCheckInsByDate[dateStr])
-    ) {
+    if (dateStr) {
       setSelectedDay(dateStr);
       setShowModal(true);
     }
@@ -122,10 +123,10 @@ const Overview: React.FC = () => {
       observations: plannedCheckIn.notes,
     };
 
-    // Add to check-ins
+    // Add to audits
     setCheckIns((prev) => [...prev, newCheckIn]);
 
-    // Remove from planned check-ins
+    // Remove from planned audits
     setPlannedCheckIns((prev) =>
       prev.filter((pci) => pci.id !== plannedCheckIn.id)
     );
@@ -140,6 +141,41 @@ const Overview: React.FC = () => {
     setEditDate("");
     setEditLocationId("");
     setEditObservations("");
+    setAddingCheckIn(false);
+    setNewCheckInDate("");
+    setNewCheckInLocationId("");
+    setNewCheckInObservations("");
+  };
+
+  const startAddingCheckIn = () => {
+    if (selectedDay) {
+      setNewCheckInDate(selectedDay);
+      setAddingCheckIn(true);
+    }
+  };
+
+  const saveNewCheckIn = () => {
+    if (!newCheckInLocationId) return;
+
+    // Validate that the selected date is not in the future
+    const today = new Date().toISOString().split("T")[0];
+    if (newCheckInDate > today) {
+      toast.error(
+        "Cannot check-in for future dates. Please select today or a past date."
+      );
+      return;
+    }
+
+    const newCheckIn: CheckIn = {
+      id: Date.now().toString(),
+      date: newCheckInDate,
+      locationId: newCheckInLocationId,
+      observations: newCheckInObservations,
+    };
+
+    setCheckIns((prev) => [...prev, newCheckIn]);
+    toast.success("Check-in added successfully!");
+    closeModal();
   };
 
   const startEditing = (checkIn: CheckIn) => {
@@ -166,7 +202,7 @@ const Overview: React.FC = () => {
       observations: editObservations,
     };
 
-    // Update check-ins using the setter
+    // Update audits using the setter
     setCheckIns((prevCheckIns) =>
       prevCheckIns.map((checkIn) =>
         checkIn.id === editingCheckIn.id ? updatedCheckIn : checkIn
@@ -226,11 +262,11 @@ const Overview: React.FC = () => {
     )}`;
   };
 
-  // Check monthly validation (4 check-ins per location per month)
+  // Check monthly validation (4 audits per location per month)
   const getMonthlyAlerts = () => {
     const alerts = [];
     const locationsCount = locations.length;
-    const expectedCheckInsPerMonth = locationsCount * 4; // 4 check-ins per location
+    const expectedCheckInsPerMonth = locationsCount * 4; // 4 audits per location
     const checkInsByMonth: Record<string, CheckIn[]> = {};
 
     checkIns.forEach((checkIn) => {
@@ -330,9 +366,9 @@ const Overview: React.FC = () => {
             <span className="text-2xl">📅</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Check-In Calendar
+            Audit Calendar
           </h1>
-          <p className="text-gray-600 mb-6">View your check-ins by date</p>
+          <p className="text-gray-600 mb-6">View your audits by date</p>
 
           {/* Monthly Alerts */}
           {monthlyAlerts.length > 0 && (
@@ -358,17 +394,17 @@ const Overview: React.FC = () => {
                           month: "long",
                         }
                       )}
-                      : {alert.actual} check-ins (expected {alert.expected})
+                      : {alert.actual} audits (expected {alert.expected})
                     </span>
                   </div>
                   <p className="text-sm mt-1">
                     {alert.status === "excess"
                       ? `You have ${
                           alert.actual - alert.expected
-                        } extra check-ins this month.`
+                        } extra audits this month.`
                       : `You are missing ${
                           alert.expected - alert.actual
-                        } check-ins this month (need 4 per location).`}
+                        } audits this month (need 4 per location).`}
                   </p>
                 </div>
               ))}
@@ -410,7 +446,7 @@ const Overview: React.FC = () => {
             {(fromDate || toDate) && (
               <div className="mt-3 sm:mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs sm:text-sm text-blue-800">
-                  📊 Exporting check-ins {fromDate && `from ${fromDate}`}{" "}
+                  📊 Exporting audits {fromDate && `from ${fromDate}`}{" "}
                   {fromDate && toDate && " "} {toDate && `to ${toDate}`}
                 </p>
               </div>
@@ -519,182 +555,255 @@ const Overview: React.FC = () => {
       </div>
 
       {/* Modal */}
-      {showModal &&
-        selectedDay &&
-        (checkInsByDate[selectedDay] || plannedCheckInsByDate[selectedDay]) && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-            <div className="bg-white p-4 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4">
-              <div className="text-center mb-4 sm:mb-6">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <span className="text-lg sm:text-xl">📅</span>
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
-                  Check-ins for {selectedDay}
-                </h3>
+      {showModal && selectedDay && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-4 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div className="text-center mb-4 sm:mb-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <span className="text-lg sm:text-xl">📅</span>
               </div>
-              <ul className="space-y-3 mb-4 sm:mb-6">
-                {/* Actual Check-ins */}
-                {checkInsByDate[selectedDay]?.map((checkIn) => (
-                  <li
-                    key={checkIn.id}
-                    className="p-3 sm:p-4 bg-gray-50 rounded-lg"
-                  >
-                    {editingCheckIn?.id === checkIn.id ? (
-                      // Edit form
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                Check-ins for {selectedDay}
+              </h3>
+            </div>
+
+            {/* Add New Check-in Button */}
+            {!checkInsByDate[selectedDay]?.length && !addingCheckIn && (
+              <div className="mb-4 sm:mb-6">
+                <button
+                  onClick={startAddingCheckIn}
+                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-lg text-sm sm:text-base"
+                >
+                  ➕ Add New Check-in
+                </button>
+              </div>
+            )}
+
+            {/* Add New Check-in Form */}
+            {addingCheckIn && (
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">
+                  Add New Check-in
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                      Location
+                    </label>
+                    <select
+                      value={newCheckInLocationId}
+                      onChange={(e) => setNewCheckInLocationId(e.target.value)}
+                      className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select location</option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                      Observations (Optional)
+                    </label>
+                    <textarea
+                      value={newCheckInObservations}
+                      onChange={(e) =>
+                        setNewCheckInObservations(e.target.value)
+                      }
+                      rows={2}
+                      className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Add notes..."
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={saveNewCheckIn}
+                      className="flex-1 bg-green-500 text-white py-2 px-3 rounded text-xs sm:text-sm font-medium hover:bg-green-600 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setAddingCheckIn(false)}
+                      className="flex-1 bg-gray-500 text-white py-2 px-3 rounded text-xs sm:text-sm font-medium hover:bg-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(checkInsByDate[selectedDay]?.length > 0 ||
+              plannedCheckInsByDate[selectedDay]?.length > 0) && (
+              <>
+                <ul className="space-y-3 mb-4 sm:mb-6">
+                  {/* Actual Check-ins */}
+                  {checkInsByDate[selectedDay]?.map((checkIn) => (
+                    <li
+                      key={checkIn.id}
+                      className="p-3 sm:p-4 bg-gray-50 rounded-lg"
+                    >
+                      {editingCheckIn?.id === checkIn.id ? (
+                        // Edit form
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                Date
+                              </label>
+                              <input
+                                type="date"
+                                value={editDate}
+                                onChange={(e) => setEditDate(e.target.value)}
+                                className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                Location
+                              </label>
+                              <select
+                                value={editLocationId}
+                                onChange={(e) =>
+                                  setEditLocationId(e.target.value)
+                                }
+                                className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                <option value="">Select location</option>
+                                {locations.map((location) => (
+                                  <option key={location.id} value={location.id}>
+                                    {location.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
                           <div>
                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                              Date
+                              Observations
                             </label>
-                            <input
-                              type="date"
-                              value={editDate}
-                              onChange={(e) => setEditDate(e.target.value)}
-                              className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            <textarea
+                              value={editObservations}
+                              onChange={(e) =>
+                                setEditObservations(e.target.value)
+                              }
+                              rows={2}
+                              className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                              placeholder="Add notes..."
                             />
                           </div>
-                          <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                              Location
-                            </label>
-                            <select
-                              value={editLocationId}
-                              onChange={(e) =>
-                                setEditLocationId(e.target.value)
-                              }
-                              className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                              <option value="">Select location</option>
-                              {locations.map((location) => (
-                                <option key={location.id} value={location.id}>
-                                  {location.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                            Observations
-                          </label>
-                          <textarea
-                            value={editObservations}
-                            onChange={(e) =>
-                              setEditObservations(e.target.value)
-                            }
-                            rows={2}
-                            className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                            placeholder="Add notes..."
-                          />
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={saveEdit}
-                            className="flex-1 bg-green-500 text-white py-2 px-3 rounded text-xs sm:text-sm font-medium hover:bg-green-600 transition-colors"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={cancelEditing}
-                            className="flex-1 bg-gray-500 text-white py-2 px-3 rounded text-xs sm:text-sm font-medium hover:bg-gray-600 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      // View mode
-                      <>
-                        <div className="flex justify-between items-start">
-                          <div className="font-semibold text-gray-900 flex items-center space-x-2 text-sm sm:text-base flex-1">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{
-                                backgroundColor: getLocationColor(
-                                  checkIn.locationId
-                                ),
-                              }}
-                            ></div>
-                            <span>{getLocationName(checkIn.locationId)}</span>
-                          </div>
-                          <div className="flex space-x-1 ml-2">
+                          <div className="flex space-x-2">
                             <button
-                              onClick={() => startEditing(checkIn)}
-                              className="text-blue-600 hover:text-blue-800 p-1 text-sm"
-                              title="Edit check-in"
+                              onClick={saveEdit}
+                              className="flex-1 bg-green-500 text-white py-2 px-3 rounded text-xs sm:text-sm font-medium hover:bg-green-600 transition-colors"
                             >
-                              ✏️
+                              Save
                             </button>
                             <button
-                              onClick={() => setCheckInToDelete(checkIn)}
-                              className="text-red-600 hover:text-red-800 p-1 text-sm"
-                              title="Delete check-in"
+                              onClick={cancelEditing}
+                              className="flex-1 bg-gray-500 text-white py-2 px-3 rounded text-xs sm:text-sm font-medium hover:bg-gray-600 transition-colors"
                             >
-                              🗑️
+                              Cancel
                             </button>
                           </div>
                         </div>
-                        {checkIn.observations && (
-                          <p className="text-xs sm:text-sm text-gray-600 mt-2">
-                            {checkIn.observations}
-                          </p>
-                        )}
-                      </>
-                    )}
-                  </li>
-                ))}
+                      ) : (
+                        // View mode
+                        <>
+                          <div className="flex justify-between items-start">
+                            <div className="font-semibold text-gray-900 flex items-center space-x-2 text-sm sm:text-base flex-1">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{
+                                  backgroundColor: getLocationColor(
+                                    checkIn.locationId
+                                  ),
+                                }}
+                              ></div>
+                              <span>{getLocationName(checkIn.locationId)}</span>
+                            </div>
+                            <div className="flex space-x-1 ml-2">
+                              <button
+                                onClick={() => startEditing(checkIn)}
+                                className="text-blue-600 hover:text-blue-800 p-1 text-sm"
+                                title="Edit check-in"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => setCheckInToDelete(checkIn)}
+                                className="text-red-600 hover:text-red-800 p-1 text-sm"
+                                title="Delete check-in"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                          {checkIn.observations && (
+                            <p className="text-xs sm:text-sm text-gray-600 mt-2">
+                              {checkIn.observations}
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </li>
+                  ))}
 
-                {/* Planned Check-ins */}
-                {plannedCheckInsByDate[selectedDay]?.map((plannedCheckIn) => (
-                  <li
-                    key={`planned-${plannedCheckIn.id}`}
-                    className="p-3 sm:p-4 bg-blue-50 border-2 border-blue-200 rounded-lg"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="font-semibold text-gray-900 flex items-center space-x-2 text-sm sm:text-base flex-1">
-                        <div
-                          className="w-3 h-3 rounded-full border-2 border-white shadow-sm"
-                          style={{
-                            backgroundColor: getLocationColor(
-                              plannedCheckIn.locationId
-                            ),
-                          }}
-                        ></div>
-                        <span>
-                          {getLocationName(plannedCheckIn.locationId)}
-                        </span>
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                          Planned
-                        </span>
+                  {/* Planned Check-ins */}
+                  {plannedCheckInsByDate[selectedDay]?.map((plannedCheckIn) => (
+                    <li
+                      key={`planned-${plannedCheckIn.id}`}
+                      className="p-3 sm:p-4 bg-blue-50 border-2 border-blue-200 rounded-lg"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="font-semibold text-gray-900 flex items-center space-x-2 text-sm sm:text-base flex-1">
+                          <div
+                            className="w-3 h-3 rounded-full border-2 border-white shadow-sm"
+                            style={{
+                              backgroundColor: getLocationColor(
+                                plannedCheckIn.locationId
+                              ),
+                            }}
+                          ></div>
+                          <span>
+                            {getLocationName(plannedCheckIn.locationId)}
+                          </span>
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                            Planned
+                          </span>
+                        </div>
+                        <div className="flex space-x-1 ml-2">
+                          <button
+                            onClick={() => convertToCheckIn(plannedCheckIn)}
+                            className="text-green-600 hover:text-green-800 p-1 text-sm"
+                            title="Convert to actual check-in"
+                          >
+                            ✅
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex space-x-1 ml-2">
-                        <button
-                          onClick={() => convertToCheckIn(plannedCheckIn)}
-                          className="text-green-600 hover:text-green-800 p-1 text-sm"
-                          title="Convert to actual check-in"
-                        >
-                          ✅
-                        </button>
-                      </div>
-                    </div>
-                    {plannedCheckIn.notes && (
-                      <p className="text-xs sm:text-sm text-gray-600 mt-2">
-                        {plannedCheckIn.notes}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={closeModal}
-                className="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-red-600 hover:to-pink-700 transform hover:scale-105 transition-all duration-200 shadow-lg text-sm sm:text-base"
-              >
-                Close
-              </button>
-            </div>
+                      {plannedCheckIn.notes && (
+                        <p className="text-xs sm:text-sm text-gray-600 mt-2">
+                          {plannedCheckIn.notes}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={closeModal}
+                  className="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-red-600 hover:to-pink-700 transform hover:scale-105 transition-all duration-200 shadow-lg text-sm sm:text-base"
+                >
+                  Close
+                </button>
+              </>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog
