@@ -587,7 +587,7 @@ const Overview: React.FC = () => {
             </div>
 
             {/* Add New Check-in Button */}
-            {!checkInsByDate[selectedDay]?.length && !addingCheckIn && (
+            {!addingCheckIn && (
               <div className="mb-4 sm:mb-6">
                 <button
                   onClick={startAddingCheckIn}
