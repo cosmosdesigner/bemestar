@@ -558,7 +558,26 @@ const Overview: React.FC = () => {
       {showModal && selectedDay && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white p-4 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4">
-            <div className="text-center mb-4 sm:mb-6">
+            <div className="text-center mb-4 sm:mb-6 relative">
+              <button
+                onClick={closeModal}
+                className="absolute top-0 right-0 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Close modal"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <span className="text-lg sm:text-xl">📅</span>
               </div>
