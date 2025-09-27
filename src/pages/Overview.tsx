@@ -218,39 +218,39 @@ const Overview: React.FC = () => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Get ISO week number
-  const getISOWeek = (date: Date) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    const weekNo = Math.ceil(
-      ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
-    );
-    return `${d.getFullYear()}-W${weekNo.toString().padStart(2, "0")}`;
+  // Get month string (YYYY-MM)
+  const getMonthKey = (date: Date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}`;
   };
 
-  // Check weekly validation
-  const getWeeklyAlerts = () => {
+  // Check monthly validation (4 check-ins per location per month)
+  const getMonthlyAlerts = () => {
     const alerts = [];
     const locationsCount = locations.length;
-    const checkInsByWeek: Record<string, CheckIn[]> = {};
+    const expectedCheckInsPerMonth = locationsCount * 4; // 4 check-ins per location
+    const checkInsByMonth: Record<string, CheckIn[]> = {};
 
     checkIns.forEach((checkIn) => {
-      const week = getISOWeek(new Date(checkIn.date));
-      if (!checkInsByWeek[week]) {
-        checkInsByWeek[week] = [];
+      const month = getMonthKey(new Date(checkIn.date));
+      if (!checkInsByMonth[month]) {
+        checkInsByMonth[month] = [];
       }
-      checkInsByWeek[week].push(checkIn);
+      checkInsByMonth[month].push(checkIn);
     });
 
-    for (const [week, weekCheckIns] of Object.entries(checkInsByWeek)) {
-      if (weekCheckIns.length !== locationsCount) {
+    for (const [month, monthCheckIns] of Object.entries(checkInsByMonth)) {
+      if (monthCheckIns.length !== expectedCheckInsPerMonth) {
         alerts.push({
-          week,
-          expected: locationsCount,
-          actual: weekCheckIns.length,
-          status: weekCheckIns.length > locationsCount ? "excess" : "missing",
+          month,
+          expected: expectedCheckInsPerMonth,
+          actual: monthCheckIns.length,
+          status:
+            monthCheckIns.length > expectedCheckInsPerMonth
+              ? "excess"
+              : "missing",
         });
       }
     }
@@ -258,7 +258,7 @@ const Overview: React.FC = () => {
     return alerts;
   };
 
-  const weeklyAlerts = getWeeklyAlerts();
+  const monthlyAlerts = getMonthlyAlerts();
 
   const exportToCSV = () => {
     // Validate date range
@@ -334,12 +334,12 @@ const Overview: React.FC = () => {
           </h1>
           <p className="text-gray-600 mb-6">View your check-ins by date</p>
 
-          {/* Weekly Alerts */}
-          {weeklyAlerts.length > 0 && (
+          {/* Monthly Alerts */}
+          {monthlyAlerts.length > 0 && (
             <div className="mb-6 space-y-2">
-              {weeklyAlerts.map((alert) => (
+              {monthlyAlerts.map((alert) => (
                 <div
-                  key={alert.week}
+                  key={alert.month}
                   className={`p-3 rounded-lg border ${
                     alert.status === "excess"
                       ? "bg-yellow-50 border-yellow-200 text-yellow-800"
@@ -351,18 +351,24 @@ const Overview: React.FC = () => {
                       {alert.status === "excess" ? "⚠️" : "❌"}
                     </span>
                     <span className="font-medium">
-                      Week {alert.week}: {alert.actual} check-ins (expected{" "}
-                      {alert.expected})
+                      {new Date(alert.month + "-01").toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                        }
+                      )}
+                      : {alert.actual} check-ins (expected {alert.expected})
                     </span>
                   </div>
                   <p className="text-sm mt-1">
                     {alert.status === "excess"
                       ? `You have ${
                           alert.actual - alert.expected
-                        } extra check-ins this week.`
+                        } extra check-ins this month.`
                       : `You are missing ${
                           alert.expected - alert.actual
-                        } check-ins this week.`}
+                        } check-ins this month (need 4 per location).`}
                   </p>
                 </div>
               ))}
