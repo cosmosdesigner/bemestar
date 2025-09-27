@@ -262,11 +262,11 @@ const Overview: React.FC = () => {
     )}`;
   };
 
-  // Check monthly validation (4 audits per location per month)
+  // Check monthly validation (4 audits per store per month)
   const getMonthlyAlerts = () => {
     const alerts = [];
     const locationsCount = locations.length;
-    const expectedCheckInsPerMonth = locationsCount * 4; // 4 audits per location
+    const expectedCheckInsPerMonth = locationsCount * 4; // 4 audits per store
     const checkInsByMonth: Record<string, CheckIn[]> = {};
 
     checkIns.forEach((checkIn) => {
@@ -404,7 +404,7 @@ const Overview: React.FC = () => {
                         } extra audits this month.`
                       : `You are missing ${
                           alert.expected - alert.actual
-                        } audits this month (need 4 per location).`}
+                        } audits this month (need 4 per store).`}
                   </p>
                 </div>
               ))}
