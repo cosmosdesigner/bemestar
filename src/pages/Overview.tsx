@@ -121,6 +121,26 @@ const Overview: React.FC = () => {
       date: plannedCheckIn.date,
       locationId: plannedCheckIn.locationId,
       observations: plannedCheckIn.notes,
+      checklistItems: [
+        {
+          id: "clean-window",
+          label: "Clean Window",
+          completed: false,
+          mandatory: true,
+        },
+        {
+          id: "check-locks",
+          label: "Check Locks",
+          completed: false,
+          mandatory: false,
+        },
+        {
+          id: "verify-signage",
+          label: "Verify Signage",
+          completed: false,
+          mandatory: false,
+        },
+      ],
     };
 
     // Add to audits
@@ -171,6 +191,26 @@ const Overview: React.FC = () => {
       date: newCheckInDate,
       locationId: newCheckInLocationId,
       observations: newCheckInObservations,
+      checklistItems: [
+        {
+          id: "clean-window",
+          label: "Clean Window",
+          completed: false,
+          mandatory: true,
+        },
+        {
+          id: "check-locks",
+          label: "Check Locks",
+          completed: false,
+          mandatory: false,
+        },
+        {
+          id: "verify-signage",
+          label: "Verify Signage",
+          completed: false,
+          mandatory: false,
+        },
+      ],
     };
 
     setCheckIns((prev) => [...prev, newCheckIn]);
@@ -262,7 +302,14 @@ const Overview: React.FC = () => {
     )}`;
   };
 
-  // Check monthly validation (4 audits per store per month)
+  // Check if a check-in is complete (all mandatory items checked)
+  const isCheckInComplete = (checkIn: CheckIn) => {
+    return checkIn.checklistItems
+      .filter((item) => item.mandatory)
+      .every((item) => item.completed);
+  };
+
+  // Check monthly validation (4 complete audits per store per month)
   const getMonthlyAlerts = () => {
     const alerts = [];
     const locationsCount = locations.length;
@@ -278,13 +325,14 @@ const Overview: React.FC = () => {
     });
 
     for (const [month, monthCheckIns] of Object.entries(checkInsByMonth)) {
-      if (monthCheckIns.length !== expectedCheckInsPerMonth) {
+      const completeCheckIns = monthCheckIns.filter(isCheckInComplete);
+      if (completeCheckIns.length !== expectedCheckInsPerMonth) {
         alerts.push({
           month,
           expected: expectedCheckInsPerMonth,
-          actual: monthCheckIns.length,
+          actual: completeCheckIns.length,
           status:
-            monthCheckIns.length > expectedCheckInsPerMonth
+            completeCheckIns.length > expectedCheckInsPerMonth
               ? "excess"
               : "missing",
         });
@@ -370,6 +418,39 @@ const Overview: React.FC = () => {
           </h1>
           <p className="text-gray-600 mb-6">View your audits by date</p>
 
+          {/* Incomplete Check-ins Alert */}
+          {(() => {
+            const incompleteCheckIns = checkIns.filter(
+              (checkIn) => !isCheckInComplete(checkIn)
+            );
+            return incompleteCheckIns.length > 0 ? (
+              <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-lg">⚠️</span>
+                  <span className="font-medium text-orange-800">
+                    Incomplete Check-ins
+                  </span>
+                </div>
+                <p className="text-sm text-orange-700 mb-3">
+                  The following check-ins are missing mandatory checklist items:
+                </p>
+                <ul className="space-y-1">
+                  {incompleteCheckIns.map((checkIn) => (
+                    <li key={checkIn.id} className="text-sm text-orange-700">
+                      • {new Date(checkIn.date).toLocaleDateString()} -{" "}
+                      {getLocationName(checkIn.locationId)} (missing:{" "}
+                      {checkIn.checklistItems
+                        .filter((item) => item.mandatory && !item.completed)
+                        .map((item) => item.label)
+                        .join(", ")}
+                      )
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null;
+          })()}
+
           {/* Monthly Alerts */}
           {monthlyAlerts.length > 0 && (
             <div className="mb-6 space-y-2">
@@ -394,17 +475,18 @@ const Overview: React.FC = () => {
                           month: "long",
                         }
                       )}
-                      : {alert.actual} audits (expected {alert.expected})
+                      : {alert.actual} complete audits (expected{" "}
+                      {alert.expected})
                     </span>
                   </div>
                   <p className="text-sm mt-1">
                     {alert.status === "excess"
                       ? `You have ${
                           alert.actual - alert.expected
-                        } extra audits this month.`
+                        } extra complete audits this month.`
                       : `You are missing ${
                           alert.expected - alert.actual
-                        } audits this month (need 4 per store).`}
+                        } complete audits this month (need 4 per store with all mandatory items checked).`}
                   </p>
                 </div>
               ))}
@@ -714,6 +796,50 @@ const Overview: React.FC = () => {
                               placeholder="Add notes..."
                             />
                           </div>
+                          <div>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                              Checklist
+                            </label>
+                            <div className="space-y-2">
+                              {editingCheckIn?.checklistItems.map(
+                                (item, index) => (
+                                  <div
+                                    key={item.id}
+                                    className="flex items-center space-x-2"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      id={`edit-checklist-${item.id}`}
+                                      checked={item.completed}
+                                      onChange={(e) => {
+                                        const updatedCheckIn = {
+                                          ...editingCheckIn,
+                                        };
+                                        updatedCheckIn.checklistItems[
+                                          index
+                                        ].completed = e.target.checked;
+                                        setEditingCheckIn(updatedCheckIn);
+                                      }}
+                                      className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <label
+                                      htmlFor={`edit-checklist-${item.id}`}
+                                      className={`text-xs ${
+                                        item.mandatory
+                                          ? "text-red-700 font-medium"
+                                          : "text-gray-700"
+                                      }`}
+                                    >
+                                      {item.label}
+                                      {item.mandatory && (
+                                        <span className="text-red-500">*</span>
+                                      )}
+                                    </label>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
                           <div className="flex space-x-2">
                             <button
                               onClick={saveEdit}
@@ -766,6 +892,43 @@ const Overview: React.FC = () => {
                               {checkIn.observations}
                             </p>
                           )}
+                          <div className="mt-3">
+                            <p className="text-xs font-medium text-gray-700 mb-1">
+                              Checklist:
+                            </p>
+                            <div className="space-y-1">
+                              {checkIn.checklistItems.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <span
+                                    className={`text-xs ${
+                                      item.completed
+                                        ? "text-green-600"
+                                        : "text-red-600"
+                                    }`}
+                                  >
+                                    {item.completed ? "✅" : "❌"}
+                                  </span>
+                                  <span
+                                    className={`text-xs ${
+                                      item.mandatory ? "font-medium" : ""
+                                    } ${
+                                      item.mandatory && !item.completed
+                                        ? "text-red-700"
+                                        : "text-gray-600"
+                                    }`}
+                                  >
+                                    {item.label}
+                                    {item.mandatory && (
+                                      <span className="text-red-500">*</span>
+                                    )}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </>
                       )}
                     </li>

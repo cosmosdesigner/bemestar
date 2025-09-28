@@ -11,6 +11,26 @@ const Home: React.FC = () => {
   );
   const [selectedLocationId, setSelectedLocationId] = useState("");
   const [observations, setObservations] = useState("");
+  const [checklistItems, setChecklistItems] = useState([
+    {
+      id: "clean-window",
+      label: "Clean Window",
+      completed: false,
+      mandatory: true,
+    },
+    {
+      id: "check-locks",
+      label: "Check Locks",
+      completed: false,
+      mandatory: false,
+    },
+    {
+      id: "verify-signage",
+      label: "Verify Signage",
+      completed: false,
+      mandatory: false,
+    },
+  ]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,11 +45,25 @@ const Home: React.FC = () => {
       return;
     }
 
+    // Validate that all mandatory checklist items are completed
+    const incompleteMandatoryItems = checklistItems.filter(
+      (item) => item.mandatory && !item.completed
+    );
+    if (incompleteMandatoryItems.length > 0) {
+      toast.error(
+        `Please complete all mandatory checklist items: ${incompleteMandatoryItems
+          .map((item) => item.label)
+          .join(", ")}`
+      );
+      return;
+    }
+
     const newCheckIn: CheckIn = {
       id: Date.now().toString(),
       date: selectedDate,
       locationId: selectedLocationId,
       observations,
+      checklistItems: checklistItems,
     };
 
     setCheckIns((prev) => [...prev, newCheckIn]);
@@ -102,6 +136,44 @@ const Home: React.FC = () => {
               placeholder="Add any notes about your visit..."
               className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none text-sm sm:text-base"
             />
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-gray-700 flex items-center space-x-2">
+              <span>✅</span>
+              <span>Checklist</span>
+            </label>
+            <div className="space-y-2">
+              {checklistItems.map((item, index) => (
+                <div key={item.id} className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id={`checklist-${item.id}`}
+                    checked={item.completed}
+                    onChange={(e) => {
+                      const newChecklistItems = [...checklistItems];
+                      newChecklistItems[index].completed = e.target.checked;
+                      setChecklistItems(newChecklistItems);
+                    }}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                  <label
+                    htmlFor={`checklist-${item.id}`}
+                    className={`text-sm font-medium ${
+                      item.mandatory ? "text-red-700" : "text-gray-700"
+                    }`}
+                  >
+                    {item.label}
+                    {item.mandatory && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
+                  </label>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500">
+              * Required items must be completed for the check-in to be valid
+            </p>
           </div>
 
           <button
