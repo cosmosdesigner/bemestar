@@ -123,8 +123,8 @@ const Overview: React.FC = () => {
       observations: plannedCheckIn.notes,
       checklistItems: [
         {
-          id: "clean-window",
-          label: "Clean Window",
+          id: "fill-audit",
+          label: "Fill Audit",
           completed: false,
           mandatory: true,
         },
@@ -193,8 +193,8 @@ const Overview: React.FC = () => {
       observations: newCheckInObservations,
       checklistItems: [
         {
-          id: "clean-window",
-          label: "Clean Window",
+          id: "fill-audit",
+          label: "Fill Audit",
           completed: false,
           mandatory: true,
         },
@@ -304,6 +304,7 @@ const Overview: React.FC = () => {
 
   // Check if a check-in is complete (all mandatory items checked)
   const isCheckInComplete = (checkIn: CheckIn) => {
+    if (!checkIn.checklistItems) return false;
     return checkIn.checklistItems
       .filter((item) => item.mandatory)
       .every((item) => item.completed);
@@ -440,9 +441,11 @@ const Overview: React.FC = () => {
                       • {new Date(checkIn.date).toLocaleDateString()} -{" "}
                       {getLocationName(checkIn.locationId)} (missing:{" "}
                       {checkIn.checklistItems
-                        .filter((item) => item.mandatory && !item.completed)
-                        .map((item) => item.label)
-                        .join(", ")}
+                        ? checkIn.checklistItems
+                            .filter((item) => item.mandatory && !item.completed)
+                            .map((item) => item.label)
+                            .join(", ")
+                        : "checklist not available"}
                       )
                     </li>
                   ))}
@@ -892,43 +895,45 @@ const Overview: React.FC = () => {
                               {checkIn.observations}
                             </p>
                           )}
-                          <div className="mt-3">
-                            <p className="text-xs font-medium text-gray-700 mb-1">
-                              Checklist:
-                            </p>
-                            <div className="space-y-1">
-                              {checkIn.checklistItems.map((item) => (
-                                <div
-                                  key={item.id}
-                                  className="flex items-center space-x-2"
-                                >
-                                  <span
-                                    className={`text-xs ${
-                                      item.completed
-                                        ? "text-green-600"
-                                        : "text-red-600"
-                                    }`}
+                          {checkIn.checklistItems && (
+                            <div className="mt-3">
+                              <p className="text-xs font-medium text-gray-700 mb-1">
+                                Checklist:
+                              </p>
+                              <div className="space-y-1">
+                                {checkIn.checklistItems.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="flex items-center space-x-2"
                                   >
-                                    {item.completed ? "✅" : "❌"}
-                                  </span>
-                                  <span
-                                    className={`text-xs ${
-                                      item.mandatory ? "font-medium" : ""
-                                    } ${
-                                      item.mandatory && !item.completed
-                                        ? "text-red-700"
-                                        : "text-gray-600"
-                                    }`}
-                                  >
-                                    {item.label}
-                                    {item.mandatory && (
-                                      <span className="text-red-500">*</span>
-                                    )}
-                                  </span>
-                                </div>
-                              ))}
+                                    <span
+                                      className={`text-xs ${
+                                        item.completed
+                                          ? "text-green-600"
+                                          : "text-red-600"
+                                      }`}
+                                    >
+                                      {item.completed ? "✅" : "❌"}
+                                    </span>
+                                    <span
+                                      className={`text-xs ${
+                                        item.mandatory ? "font-medium" : ""
+                                      } ${
+                                        item.mandatory && !item.completed
+                                          ? "text-red-700"
+                                          : "text-gray-600"
+                                      }`}
+                                    >
+                                      {item.label}
+                                      {item.mandatory && (
+                                        <span className="text-red-500">*</span>
+                                      )}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </>
                       )}
                     </li>

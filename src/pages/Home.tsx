@@ -13,8 +13,8 @@ const Home: React.FC = () => {
   const [observations, setObservations] = useState("");
   const [checklistItems, setChecklistItems] = useState([
     {
-      id: "clean-window",
-      label: "Clean Window",
+      id: "fill-audit",
+      label: "Fill Audit",
       completed: false,
       mandatory: true,
     },
