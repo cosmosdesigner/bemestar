@@ -799,50 +799,54 @@ const Overview: React.FC = () => {
                               placeholder="Add notes..."
                             />
                           </div>
-                          <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                              Checklist
-                            </label>
-                            <div className="space-y-2">
-                              {editingCheckIn?.checklistItems.map(
-                                (item, index) => (
-                                  <div
-                                    key={item.id}
-                                    className="flex items-center space-x-2"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      id={`edit-checklist-${item.id}`}
-                                      checked={item.completed}
-                                      onChange={(e) => {
-                                        const updatedCheckIn = {
-                                          ...editingCheckIn,
-                                        };
-                                        updatedCheckIn.checklistItems[
-                                          index
-                                        ].completed = e.target.checked;
-                                        setEditingCheckIn(updatedCheckIn);
-                                      }}
-                                      className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                                    />
-                                    <label
-                                      htmlFor={`edit-checklist-${item.id}`}
-                                      className={`text-xs ${
-                                        item.mandatory
-                                          ? "text-red-700 font-medium"
-                                          : "text-gray-700"
-                                      }`}
+                          {editingCheckIn?.checklistItems && (
+                            <div>
+                              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                Checklist
+                              </label>
+                              <div className="space-y-2">
+                                {editingCheckIn.checklistItems.map(
+                                  (item, index) => (
+                                    <div
+                                      key={item.id}
+                                      className="flex items-center space-x-2"
                                     >
-                                      {item.label}
-                                      {item.mandatory && (
-                                        <span className="text-red-500">*</span>
-                                      )}
-                                    </label>
-                                  </div>
-                                )
-                              )}
+                                      <input
+                                        type="checkbox"
+                                        id={`edit-checklist-${item.id}`}
+                                        checked={item.completed}
+                                        onChange={(e) => {
+                                          const updatedCheckIn = {
+                                            ...editingCheckIn,
+                                          };
+                                          updatedCheckIn.checklistItems[
+                                            index
+                                          ].completed = e.target.checked;
+                                          setEditingCheckIn(updatedCheckIn);
+                                        }}
+                                        className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                      />
+                                      <label
+                                        htmlFor={`edit-checklist-${item.id}`}
+                                        className={`text-xs ${
+                                          item.mandatory
+                                            ? "text-red-700 font-medium"
+                                            : "text-gray-700"
+                                        }`}
+                                      >
+                                        {item.label}
+                                        {item.mandatory && (
+                                          <span className="text-red-500">
+                                            *
+                                          </span>
+                                        )}
+                                      </label>
+                                    </div>
+                                  )
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          )}
                           <div className="flex space-x-2">
                             <button
                               onClick={saveEdit}
