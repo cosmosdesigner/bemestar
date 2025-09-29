@@ -25,7 +25,7 @@ const Layout: React.FC = () => {
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
               >
                 <span>🏠</span>
-                <span>Audits</span>
+                <span>Visits</span>
               </Link>
               <Link
                 to="/plan"
@@ -90,7 +90,7 @@ const Layout: React.FC = () => {
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center space-x-2"
                 >
                   <span>🏠</span>
-                  <span>Audits</span>
+                  <span>Visits</span>
                 </Link>
                 <Link
                   to="/plan"

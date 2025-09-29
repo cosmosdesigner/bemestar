@@ -48,10 +48,10 @@ const Plan: React.FC = () => {
             <span className="text-xl sm:text-2xl">📅</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Plan Audits
+            Plan Visits
           </h1>
           <p className="text-gray-600 text-sm sm:text-base">
-            Schedule your audits for future dates
+            Schedule your visits for future dates
           </p>
         </div>
 
@@ -111,7 +111,7 @@ const Plan: React.FC = () => {
             type="submit"
             className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-600 hover:to-teal-700 transform hover:scale-105 transition-all duration-200 shadow-lg text-sm sm:text-base"
           >
-            📅 Plan Audit
+            📅 Plan Visits
           </button>
         </form>
       </div>

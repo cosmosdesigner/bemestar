@@ -32,6 +32,14 @@ const Overview: React.FC = () => {
   const [newCheckInDate, setNewCheckInDate] = useState("");
   const [newCheckInLocationId, setNewCheckInLocationId] = useState("");
   const [newCheckInObservations, setNewCheckInObservations] = useState("");
+  const [newCheckInChecklistItems, setNewCheckInChecklistItems] = useState([
+    {
+      id: "fill-audit",
+      label: "Audit done",
+      completed: false,
+      mandatory: false,
+    },
+  ]);
 
   // Group audits and planned audits by date
   const checkInsByDate: Record<string, CheckIn[]> = {};
@@ -63,20 +71,55 @@ const Overview: React.FC = () => {
     return location ? location.color || "#3B82F6" : "#3B82F6";
   };
 
-  // Get the color for a day (use the most recent check-in's location color, or planned check-in if no actual audits)
+  // Get the color for a day (use gradient for multiple locations, or single color)
   const getDayColor = (dateStr: string) => {
     const dayCheckIns = checkInsByDate[dateStr];
     const dayPlannedCheckIns = plannedCheckInsByDate[dateStr];
 
     if (dayCheckIns && dayCheckIns.length > 0) {
-      // Sort by time (assuming newer IDs are more recent)
-      const sortedCheckIns = dayCheckIns.sort((a, b) =>
-        b.id.localeCompare(a.id)
-      );
-      return getLocationColor(sortedCheckIns[0].locationId);
+      // Get unique location colors for this day
+      const uniqueColors = [
+        ...new Set(
+          dayCheckIns.map((checkIn) => getLocationColor(checkIn.locationId))
+        ),
+      ];
+
+      if (uniqueColors.length === 1) {
+        // Single location - use solid color
+        return uniqueColors[0];
+      } else {
+        // Multiple locations - create gradient
+        const gradientStops = uniqueColors
+          .map(
+            (color, index) =>
+              `${color} ${(index / (uniqueColors.length - 1)) * 100}%`
+          )
+          .join(", ");
+        return `linear-gradient(135deg, ${gradientStops})`;
+      }
     } else if (dayPlannedCheckIns && dayPlannedCheckIns.length > 0) {
-      // Show planned audits with a lighter/different style
-      return getLocationColor(dayPlannedCheckIns[0].locationId) + "80"; // Add transparency
+      // Get unique location colors for planned check-ins
+      const uniqueColors = [
+        ...new Set(
+          dayPlannedCheckIns.map((planned) =>
+            getLocationColor(planned.locationId)
+          )
+        ),
+      ];
+
+      if (uniqueColors.length === 1) {
+        // Single location - use solid color with transparency
+        return uniqueColors[0] + "80";
+      } else {
+        // Multiple locations - create gradient with transparency
+        const gradientStops = uniqueColors
+          .map(
+            (color, index) =>
+              `${color}80 ${(index / (uniqueColors.length - 1)) * 100}%`
+          )
+          .join(", ");
+        return `linear-gradient(135deg, ${gradientStops})`;
+      }
     }
 
     return "#3B82F6";
@@ -124,19 +167,7 @@ const Overview: React.FC = () => {
       checklistItems: [
         {
           id: "fill-audit",
-          label: "Fill Audit",
-          completed: false,
-          mandatory: true,
-        },
-        {
-          id: "check-locks",
-          label: "Check Locks",
-          completed: false,
-          mandatory: false,
-        },
-        {
-          id: "verify-signage",
-          label: "Verify Signage",
+          label: "Audit done",
           completed: false,
           mandatory: false,
         },
@@ -165,6 +196,14 @@ const Overview: React.FC = () => {
     setNewCheckInDate("");
     setNewCheckInLocationId("");
     setNewCheckInObservations("");
+    setNewCheckInChecklistItems([
+      {
+        id: "fill-audit",
+        label: "Audit done",
+        completed: false,
+        mandatory: false,
+      },
+    ]);
   };
 
   const startAddingCheckIn = () => {
@@ -191,26 +230,7 @@ const Overview: React.FC = () => {
       date: newCheckInDate,
       locationId: newCheckInLocationId,
       observations: newCheckInObservations,
-      checklistItems: [
-        {
-          id: "fill-audit",
-          label: "Fill Audit",
-          completed: false,
-          mandatory: true,
-        },
-        {
-          id: "check-locks",
-          label: "Check Locks",
-          completed: false,
-          mandatory: false,
-        },
-        {
-          id: "verify-signage",
-          label: "Verify Signage",
-          completed: false,
-          mandatory: false,
-        },
-      ],
+      checklistItems: newCheckInChecklistItems,
     };
 
     setCheckIns((prev) => [...prev, newCheckIn]);
@@ -259,6 +279,25 @@ const Overview: React.FC = () => {
     );
   };
 
+  const updateChecklistItem = (
+    checkInId: string,
+    itemId: string,
+    completed: boolean
+  ) => {
+    setCheckIns((prevCheckIns) =>
+      prevCheckIns.map((checkIn) =>
+        checkIn.id === checkInId && checkIn.checklistItems
+          ? {
+              ...checkIn,
+              checklistItems: checkIn.checklistItems.map((item) =>
+                item.id === itemId ? { ...item, completed } : item
+              ),
+            }
+          : checkIn
+      )
+    );
+  };
+
   const goToPreviousMonth = () => {
     if (currentMonth === 0) {
       setCurrentMonth(11);
@@ -302,15 +341,7 @@ const Overview: React.FC = () => {
     )}`;
   };
 
-  // Check if a check-in is complete (all mandatory items checked)
-  const isCheckInComplete = (checkIn: CheckIn) => {
-    if (!checkIn.checklistItems) return false;
-    return checkIn.checklistItems
-      .filter((item) => item.mandatory)
-      .every((item) => item.completed);
-  };
-
-  // Check monthly validation (4 complete audits per store per month)
+  // Check monthly validation (4 check-ins per store per month, regardless of completion)
   const getMonthlyAlerts = () => {
     const alerts = [];
     const locationsCount = locations.length;
@@ -326,14 +357,13 @@ const Overview: React.FC = () => {
     });
 
     for (const [month, monthCheckIns] of Object.entries(checkInsByMonth)) {
-      const completeCheckIns = monthCheckIns.filter(isCheckInComplete);
-      if (completeCheckIns.length !== expectedCheckInsPerMonth) {
+      if (monthCheckIns.length !== expectedCheckInsPerMonth) {
         alerts.push({
           month,
           expected: expectedCheckInsPerMonth,
-          actual: completeCheckIns.length,
+          actual: monthCheckIns.length,
           status:
-            completeCheckIns.length > expectedCheckInsPerMonth
+            monthCheckIns.length > expectedCheckInsPerMonth
               ? "excess"
               : "missing",
         });
@@ -421,32 +451,30 @@ const Overview: React.FC = () => {
 
           {/* Incomplete Check-ins Alert */}
           {(() => {
-            const incompleteCheckIns = checkIns.filter(
-              (checkIn) => !isCheckInComplete(checkIn)
-            );
+            const incompleteCheckIns = checkIns.filter((checkIn) => {
+              if (!checkIn.checklistItems) return false;
+              // Show alert for check-ins where "Audit done" is not completed
+              const fillAuditItem = checkIn.checklistItems.find(
+                (item) => item.id === "fill-audit"
+              );
+              return fillAuditItem && !fillAuditItem.completed;
+            });
             return incompleteCheckIns.length > 0 ? (
               <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className="text-lg">⚠️</span>
                   <span className="font-medium text-orange-800">
-                    Incomplete Check-ins
+                    Check-ins Needing Attention
                   </span>
                 </div>
                 <p className="text-sm text-orange-700 mb-3">
-                  The following check-ins are missing mandatory checklist items:
+                  The following check-ins have not completed the Audit done:
                 </p>
                 <ul className="space-y-1">
                   {incompleteCheckIns.map((checkIn) => (
                     <li key={checkIn.id} className="text-sm text-orange-700">
                       • {new Date(checkIn.date).toLocaleDateString()} -{" "}
-                      {getLocationName(checkIn.locationId)} (missing:{" "}
-                      {checkIn.checklistItems
-                        ? checkIn.checklistItems
-                            .filter((item) => item.mandatory && !item.completed)
-                            .map((item) => item.label)
-                            .join(", ")
-                        : "checklist not available"}
-                      )
+                      {getLocationName(checkIn.locationId)}
                     </li>
                   ))}
                 </ul>
@@ -478,7 +506,7 @@ const Overview: React.FC = () => {
                           month: "long",
                         }
                       )}
-                      : {alert.actual} complete audits (expected{" "}
+                      : {alert.actual} complete visits (expected{" "}
                       {alert.expected})
                     </span>
                   </div>
@@ -486,10 +514,10 @@ const Overview: React.FC = () => {
                     {alert.status === "excess"
                       ? `You have ${
                           alert.actual - alert.expected
-                        } extra complete audits this month.`
+                        } extra check-ins this month.`
                       : `You are missing ${
                           alert.expected - alert.actual
-                        } complete audits this month (need 4 per store with all mandatory items checked).`}
+                        } visits this month (need 4 per store).`}
                   </p>
                 </div>
               ))}
@@ -597,7 +625,7 @@ const Overview: React.FC = () => {
                     : ""
                 }`}
                 style={{
-                  backgroundColor:
+                  background:
                     dateStr &&
                     (checkInsByDate[dateStr] || plannedCheckInsByDate[dateStr])
                       ? getDayColor(dateStr)
@@ -721,6 +749,40 @@ const Overview: React.FC = () => {
                       className="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                       placeholder="Add notes..."
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                      Checklist
+                    </label>
+                    <div className="space-y-2">
+                      {newCheckInChecklistItems.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <input
+                            type="checkbox"
+                            id={`new-checklist-${item.id}`}
+                            checked={item.completed}
+                            onChange={(e) => {
+                              const newChecklistItems = [
+                                ...newCheckInChecklistItems,
+                              ];
+                              newChecklistItems[index].completed =
+                                e.target.checked;
+                              setNewCheckInChecklistItems(newChecklistItems);
+                            }}
+                            className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <label
+                            htmlFor={`new-checklist-${item.id}`}
+                            className="text-xs text-gray-700"
+                          >
+                            {item.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -901,38 +963,43 @@ const Overview: React.FC = () => {
                           )}
                           {checkIn.checklistItems && (
                             <div className="mt-3">
-                              <p className="text-xs font-medium text-gray-700 mb-1">
+                              <p className="text-xs font-medium text-gray-700 mb-2">
                                 Checklist:
                               </p>
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 {checkIn.checklistItems.map((item) => (
                                   <div
                                     key={item.id}
                                     className="flex items-center space-x-2"
                                   >
-                                    <span
-                                      className={`text-xs ${
-                                        item.completed
-                                          ? "text-green-600"
-                                          : "text-red-600"
-                                      }`}
-                                    >
-                                      {item.completed ? "✅" : "❌"}
-                                    </span>
-                                    <span
-                                      className={`text-xs ${
+                                    <input
+                                      type="checkbox"
+                                      id={`view-checklist-${checkIn.id}-${item.id}`}
+                                      checked={item.completed}
+                                      onChange={(e) =>
+                                        updateChecklistItem(
+                                          checkIn.id,
+                                          item.id,
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <label
+                                      htmlFor={`view-checklist-${checkIn.id}-${item.id}`}
+                                      className={`text-xs cursor-pointer ${
                                         item.mandatory ? "font-medium" : ""
                                       } ${
                                         item.mandatory && !item.completed
                                           ? "text-red-700"
-                                          : "text-gray-600"
+                                          : "text-gray-700"
                                       }`}
                                     >
                                       {item.label}
                                       {item.mandatory && (
                                         <span className="text-red-500">*</span>
                                       )}
-                                    </span>
+                                    </label>
                                   </div>
                                 ))}
                               </div>

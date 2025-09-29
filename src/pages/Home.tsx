@@ -14,19 +14,7 @@ const Home: React.FC = () => {
   const [checklistItems, setChecklistItems] = useState([
     {
       id: "fill-audit",
-      label: "Fill Audit",
-      completed: false,
-      mandatory: true,
-    },
-    {
-      id: "check-locks",
-      label: "Check Locks",
-      completed: false,
-      mandatory: false,
-    },
-    {
-      id: "verify-signage",
-      label: "Verify Signage",
+      label: "Audit done",
       completed: false,
       mandatory: false,
     },
@@ -41,19 +29,6 @@ const Home: React.FC = () => {
     if (selectedDate > today) {
       toast.error(
         "Cannot check-in for future dates. Please select today or a past date."
-      );
-      return;
-    }
-
-    // Validate that all mandatory checklist items are completed
-    const incompleteMandatoryItems = checklistItems.filter(
-      (item) => item.mandatory && !item.completed
-    );
-    if (incompleteMandatoryItems.length > 0) {
-      toast.error(
-        `Please complete all mandatory checklist items: ${incompleteMandatoryItems
-          .map((item) => item.label)
-          .join(", ")}`
       );
       return;
     }
@@ -79,7 +54,7 @@ const Home: React.FC = () => {
             <span className="text-xl sm:text-2xl">📍</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            New Audit
+            New Visit
           </h1>
           <p className="text-gray-600 text-sm sm:text-base">
             Record your visit to a store
@@ -159,28 +134,20 @@ const Home: React.FC = () => {
                   />
                   <label
                     htmlFor={`checklist-${item.id}`}
-                    className={`text-sm font-medium ${
-                      item.mandatory ? "text-red-700" : "text-gray-700"
-                    }`}
+                    className="text-sm font-medium text-gray-700"
                   >
                     {item.label}
-                    {item.mandatory && (
-                      <span className="text-red-500 ml-1">*</span>
-                    )}
                   </label>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-500">
-              * Required items must be completed for the check-in to be valid
-            </p>
           </div>
 
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 shadow-lg text-sm sm:text-base"
           >
-            🚀 Check In
+            🚀 Check Visit
           </button>
         </form>
       </div>
